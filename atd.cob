@@ -6,6 +6,7 @@
            FILE-CONTROL.
                 SELECT MONTHLY-ATTENDANTS ASSIGN TO
                        'monthly-attendance.txt'
+                       FILE STATUS IS WS-MONTHLY-ATTENDANTS-FILE-STATUS
                        ORGANIZATION IS LINE SEQUENTIAL
                        ACCESS MODE IS SEQUENTIAL.
 
@@ -16,13 +17,14 @@
 
                 SELECT EMPLOYEES ASSIGN TO
                        'employees.txt'
+                       FILE STATUS IS WS-EMPLOYEES-FILE-STATUS
                        ORGANIZATION IS LINE SEQUENTIAL
                        ACCESS MODE IS SEQUENTIAL.
 
                 SELECT ATTENDANTS ASSIGN TO
                       'attendance.txt'
-                      ORGANIZATION IS LINE SEQUENTIAL
-                      ACCESS MODE IS SEQUENTIAL.
+                       ORGANIZATION IS LINE SEQUENTIAL
+                       ACCESS MODE IS SEQUENTIAL.
 
                 SELECT ATTENDANTS-WORK ASSIGN TO
                       'attendance-work.txt'
@@ -31,8 +33,9 @@
 
                 SELECT ATTENDANTS-SORTED ASSIGN TO
                       'attendance-sorted.txt'
-                      ORGANIZATION IS LINE SEQUENTIAL
-                      ACCESS MODE IS SEQUENTIAL.
+                       FILE STATUS IS WS-ATTENDANTS-SORTED-FILE-STATUS
+                       ORGANIZATION IS LINE SEQUENTIAL
+                       ACCESS MODE IS SEQUENTIAL.
 
                 SELECT SUMMARIES ASSIGN TO
                       'summarycob.txt'
@@ -99,33 +102,55 @@
                  02 SUMMARY-DEPARTMENT PIC A(3).
                  02 SUMMARY-STATUS PIC A(6).
 
-           WORKING-STORAGE SECTION.
-           01 WS-MONTHLY-ATTENDANT.
-             02 WS-ID PIC 9(4).
-             02 WS-ABSENT PIC 9(3).
-             02 WS-LATE PIC 9(3).
-             02 WS-OVERTIME PIC 9(3).
-           01 WS-EOF PIC A(1).
+      *     WORKING-STORAGE SECTION.
+      *     01 WS-MONTHLY-ATTENDANT.
+      *       02 WS-ID PIC 9(4).
+      *       02 WS-ABSENT PIC 9(3).
+      *       02 WS-LATE PIC 9(3).
+      *       02 WS-OVERTIME PIC 9(3).
+      *     01 WS-EOF PIC A(1).
+           01 WS-EMPLOYEES-FILE-STATUS.
+            05 WS-EMPLOYEES-STATUS-KEY-1 PIC X.
+           01 WS-ATTENDANTS-SORTED-FILE-STATUS.
+            05 WS-ATTENDANTS-SORTED-STATUS-KEY-1 PIC X.
+           01 WS-MONTHLY-ATTENDANTS-FILE-STATUS.
+            05 WS-MONTHLY-ATTENDANTS-STATUS-KEY-1 PIC X.
 
            PROCEDURE DIVISION.
            BEGIN.
              OPEN INPUT MONTHLY-ATTENDANTS.
+             OPEN INPUT ATTENDANTS.
+             OPEN INPUT EMPLOYEES.
              OPEN OUTPUT MONTHLY-ATTENDANTS-OUT.
-                  SORT ATTENDANTS-WORK ON ASCENDING KEY
-                      ATTENDANT-SORTED-ID USING ATTENDANTS GIVING
-                      ATTENDANTS-SORTED.
-                  DISPLAY 'Sort Successful'.
-                  READ MONTHLY-ATTENDANTS
-                      AT END SET EOF-MONTHLY-ATTENDANT TO TRUE
-                  END-READ
-                  PERFORM UNTIL EOF-MONTHLY-ATTENDANT
-                      WRITE MONTHLY-ATTENDANT-OUT FROM
-                        MONTHLY-ATTENDANT
-                      READ MONTHLY-ATTENDANTS
-                          AT END SET EOF-MONTHLY-ATTENDANT TO TRUE
-                      END-READ
-                  END-PERFORM
-                  DISPLAY "Finished writing file"
+             OPEN OUTPUT SUMMARIES.
+
+             SORT ATTENDANTS-WORK ON ASCENDING KEY
+                 ATTENDANT-SORTED-ID USING ATTENDANTS GIVING
+                 ATTENDANTS-SORTED.
+             OPEN INPUT ATTENDANTS-SORTED.
+
+      *     WRITE-SUMMARY-HEADER.
+
+           PROCESS-EMPLOYEE.
+              READ EMPLOYEES.
+              READ ATTENDANTS-SORTED.
+              IF WS-EMPLOYEES-STATUS-KEY-1 = "1" OR
+                  WS-ATTENDANTS-SORTED = "1"
+                GO TO PROCESS-ATTENDANT
+              
+
+           PROCESS-ATTENDANT.
+              READ MONTHLY-ATTENDANTS
+              IF WS-MONTHLY-ATTENDANTS-STATUS-KEY-1 = "1"
+                GO TO FINISH
+              WRITE MONTHLY-ATTENDANT-OUT FROM MONTHLY-ATTENDANT.
+              GO TO PROCESS-ATTENDANT.
+
+          FINISH.
+              DISPLAY "Finished writing file".
+              CLOSE ATTENDANTS-SORTED
               CLOSE MONTHLY-ATTENDANTS.
+              CLOSE EMPLOYEES
               CLOSE MONTHLY-ATTENDANTS-OUT.
-              STOP RUN.
+              CLOSE SUMMARIES.
+          STOP RUN.
