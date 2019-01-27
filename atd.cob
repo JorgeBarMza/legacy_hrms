@@ -24,6 +24,16 @@
                       ORGANIZATION IS LINE SEQUENTIAL
                       ACCESS MODE IS SEQUENTIAL.
 
+                SELECT ATTENDANTS-WORK ASSIGN TO
+                      'attendance-work.txt'
+                      ORGANIZATION IS LINE SEQUENTIAL
+                      ACCESS MODE IS SEQUENTIAL.
+
+                SELECT ATTENDANTS-SORTED ASSIGN TO
+                      'attendance-sorted.txt'
+                      ORGANIZATION IS LINE SEQUENTIAL
+                      ACCESS MODE IS SEQUENTIAL.
+
                 SELECT SUMMARIES ASSIGN TO
                       'summarycob.txt'
                       ORGANIZATION IS LINE SEQUENTIAL
@@ -66,6 +76,20 @@
                  02 ATTENDANT-STATUS PIC A(6).
                  02 ATTENDANT-DATETIME PIC X(16).
 
+           SD ATTENDANTS-WORK.
+           01 ATTENDANT-WORK.
+                 88 EOF-ATTENDANT VALUE HIGH-VALUES.
+                 02 ATTENDANT-WORK-ID PIC 9(4).
+                 02 ATTENDANT-WORK-STATUS PIC A(6).
+                 02 ATTENDANT-WORK-DATETIME PIC X(16).
+
+           FD ATTENDANTS-SORTED.
+           01 ATTENDANT-SORTED.
+                 88 EOF-ATTENDANT VALUE HIGH-VALUES.
+                 02 ATTENDANT-SORTED-ID PIC 9(4).
+                 02 ATTENDANT-SORTED-STATUS PIC A(6).
+                 02 ATTENDANT-SORTED-DATETIME PIC X(16).
+
            FD SUMMARIES.
            01 SUMMARY.
                  88 EOF-SUMMARY VALUE HIGH-VALUES.
@@ -87,6 +111,10 @@
            BEGIN.
              OPEN INPUT MONTHLY-ATTENDANTS.
              OPEN OUTPUT MONTHLY-ATTENDANTS-OUT.
+                  SORT ATTENDANTS-WORK ON ASCENDING KEY
+                      ATTENDANT-SORTED-ID USING ATTENDANTS GIVING
+                      ATTENDANTS-SORTED.
+                  DISPLAY 'Sort Successful'.
                   READ MONTHLY-ATTENDANTS
                       AT END SET EOF-MONTHLY-ATTENDANT TO TRUE
                   END-READ
