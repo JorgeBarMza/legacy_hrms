@@ -50,7 +50,7 @@
                  02 MONTHLY-ATTENDANT-ID PIC 9(4).
                  02 MONTHLY-ATTENDANT-ABSENT PIC 9(3).
                  02 MONTHLY-ATTENDANT-LATE PIC 9(3).
-                 02 MONTHLY-ATTENDANT-SUSPICIOUS PIC 9(3).
+                 02 MONTHLY-ATTENDANT-OVERTIME PIC 9(3).
 
            FD MONTHLY-ATTENDANTS-OUT.
            01 MONTHLY-ATTENDANT-OUT.
@@ -58,7 +58,7 @@
                  02 MONTHLY-ATTENDANT-OUT-ID PIC 9(4).
                  02 MONTHLY-ATTENDANT-OUT-ABSENT PIC 9(3).
                  02 MONTHLY-ATTENDANT-OUT-LATE PIC 9(3).
-                 02 MONTHLY-ATTENDANT-OUT-SUSPICIOUS PIC 9(3).
+                 02 MONTHLY-ATTENDANT-OUT-OVERTIME PIC 9(3).
 
            FD EMPLOYEES.
            01 EMPLOYEE.
@@ -116,12 +116,11 @@
                  02 SUMMARY-STATUS PIC A(10).
 
            WORKING-STORAGE SECTION.
-      *     01 WS-MONTHLY-ATTENDANT.
-      *       02 WS-ID PIC 9(4).
-      *       02 WS-ABSENT PIC 9(3).
-      *       02 WS-LATE PIC 9(3).
-      *       02 WS-OVERTIME PIC 9(3).
-      *     01 WS-EOF PIC A(1).
+           01 WS-MONTHLY-ATTENDANT.
+             02 WS-MONTHLY-ATTENDANT-ID PIC 9(4).
+             02 WS-MONTHLY-ATTENDANT-ABSENT PIC 9(3).
+             02 WS-MONTHLY-ATTENDANT-LATE PIC 9(3).
+             02 WS-MONTHLY-ATTENDANT-OVERTIME PIC 9(3).
            01 WS-EMPLOYEES-FILE-STATUS.
              05 WS-EMPLOYEES-STATUS-KEY-1 PIC X.
            01 WS-ATTENDANTS-SORTED-FILE-STATUS.
@@ -165,7 +164,6 @@
              01 WS-SHOULD-READ-ATTENDANT PIC 9 VALUE 1.
              01 WS-TITLE PIC X(24) VALUE
                "Daily Attendance Summary".
-      * TODO       01 WS-DATE PIC X(18) VALUE "Date: September 29, 2018".
              01 WS-COLUMNS.
                 02 F PIC X(13) VALUE "Staff-ID Name".
                 02 F PIC X(28) VALUE "                            ".
@@ -179,7 +177,7 @@
              01 WS-ABSENCE.
                 02 F PIC X(20) VALUE "Number of Absences: ".
                 02 WS-ABSENCES-VALUE-DISPLAY PIC zzzz.
-             01 WS-LATE.
+             01 WS-LATE-ARRIVAL.
                 02 F PIC X(25) VALUE "Number of Late Arrivals: ".
                 02 WS-LATE-VALUE-DISPLAY PIC zzzz.
              01 WS-SUSPICIOUS.
@@ -196,11 +194,20 @@
                 02 DASH2 PIC X.
                 02 WS-SUMMARY-DATE-DAY PIC 99.
              01 WS-SUMMARY-DATE-ENGLISH.
+                02 F PIC X(6) VALUE "Date: ".
                 02 WS-SUMMARY-DATE-ENGLISH-MONTH PIC X(9).
                 02 SPACE1 PIC X VALUE " ".
                 02 WS-SUMMARY-DATE-ENGLISH-DAY PIC 9(2).
                 02 SPACE2 PIC XX VALUE ", ".
                 02 WS-SUMMARY-DATE-ENGLISH-YEAR PIC 9999.
+             01 WS-ABSENT PIC 999.
+             01 WS-LATE PIC 999.
+             01 WS-OVERTIME PIC 999.
+             01 WS-MONTHLY-DATE.
+                02 WS-MONTHLY-DATE-YEAR PIC 9999.
+                02 DASH PIC X VALUE "-".
+                02 WS-MONTHLY-DATE-MONTH PIC 99.
+             01 WS-FIRST-DAY-OF-MONTH PIC 9.
 
            PROCEDURE DIVISION.
            BEGIN.
@@ -246,6 +253,9 @@
                 END-IF
               END-IF
               WRITE SUMMARY FROM WS-SUMMARY
+              MOVE WS-ABSENCES-VALUE TO WS-ABSENT
+              MOVE WS-LATE-VALUE TO WS-LATE
+              MOVE WS-OVERTIME-HOURS TO WS-OVERTIME
               PERFORM UPDATE-MONTHLY-ATTENDANCE.
 
            WRITE-SUMMARY-FOOTER.
@@ -256,14 +266,19 @@
              WRITE SUMMARY FROM WS-DASHES
              WRITE SUMMARY FROM WS-PRESENCE
              WRITE SUMMARY FROM WS-ABSENCE
-             WRITE SUMMARY FROM WS-LATE
-             WRITE SUMMARY FROM WS-SUSPICIOUS.
+             WRITE SUMMARY FROM WS-LATE-ARRIVAL
+             WRITE SUMMARY FROM WS-SUSPICIOUS
+             GO TO FINISH.
 
       * HELPER FUNCTIONS
 
            UPDATE-MONTHLY-ATTENDANCE.
-             DISPLAY "UPDATED MONTHLY ATTENDANCE".
-      *TODO
+             READ MONTHLY-ATTENDANTS
+             MOVE WS-ABSENT TO WS-MONTHLY-ATTENDANT-ABSENT
+             MOVE WS-LATE TO WS-MONTHLY-ATTENDANT-LATE
+             MOVE WS-OVERTIME TO WS-MONTHLY-ATTENDANT-OVERTIME
+             MOVE MONTHLY-ATTENDANT-ID TO WS-MONTHLY-ATTENDANT-ID
+             WRITE MONTHLY-ATTENDANT-OUT FROM WS-MONTHLY-ATTENDANT.
 
            PROCESS-ATTENDANT.
              IF ATTENDANT-SORTED-STATUS NOT = "ARRIVE"
@@ -298,9 +313,6 @@
                    END-IF
                    COMPUTE WS-OVERTIME-HOURS =
                      WS-ATTENDANT-DATETIME-LEAVE-HOUR - 17
-                   IF WS-OVERTIME-HOURS > 30
-                     MOVE 30 TO WS-OVERTIME-HOURS
-                   END-IF
                  END-IF
                END-IF.
 
@@ -310,12 +322,14 @@
               MOVE EMPLOYEE-FIRST-NAME TO WS-SUMMARY-FIRST-NAME
               MOVE EMPLOYEE-DEPARTMENT TO WS-SUMMARY-DEPARTMENT
               MOVE "ABSENT" TO WS-SUMMARY-STATUS
-              ADD 1 TO WS-ABSENCES-VALUE.
+              ADD 1 TO WS-ABSENCES-VALUE
+              MOVE 1 TO WS-ABSENT
+              MOVE 0 TO WS-LATE
+              MOVE 0 TO WS-OVERTIME.
 
            PROCESS-HEADER-DATES.
               OPEN INPUT ATTENDANTS
               READ ATTENDANTS
-              CLOSE ATTENDANTS
               MOVE ATTENDANT TO WS-SUMMARY-DATE
               MOVE WS-SUMMARY-DATE-DAY TO WS-SUMMARY-DATE-ENGLISH-DAY
               MOVE WS-SUMMARY-DATE-YEAR TO WS-SUMMARY-DATE-ENGLISH-YEAR
@@ -354,10 +368,25 @@
               END-IF
               IF WS-SUMMARY-DATE-MONTH EQUALS 12
                  MOVE "December" TO WS-SUMMARY-DATE-ENGLISH-MONTH
-              END-IF.
+              END-IF
+      * CHECK FIRST DAY OF MONTH
+              READ MONTHLY-ATTENDANTS
+              MOVE WS-SUMMARY-DATE-YEAR TO WS-MONTHLY-DATE-YEAR
+              MOVE WS-SUMMARY-DATE-MONTH TO WS-MONTHLY-DATE-MONTH
+              IF WS-SUMMARY-DATE-DAY EQUALS 01
+                MOVE 1 TO WS-FIRST-DAY-OF-MONTH
+                ADD 1 TO WS-MONTHLY-DATE-MONTH
+                IF WS-MONTHLY-DATE-MONTH = 13
+                  MOVE 1 TO WS-MONTHLY-DATE-MONTH
+                END-IF
+              END-IF
+              IF WS-SUMMARY-DATE-DAY NOT EQUALS 01
+                MOVE 0 TO WS-FIRST-DAY-OF-MONTH
+              END-IF
+              WRITE MONTHLY-ATTENDANT-OUT FROM WS-MONTHLY-DATE.
 
           FINISH.
               DISPLAY "Finished writing file".
               CLOSE ATTENDANTS-SORTED, MONTHLY-ATTENDANTS, EMPLOYEES,
-                    MONTHLY-ATTENDANTS-OUT, SUMMARIES.
+                    MONTHLY-ATTENDANTS-OUT, SUMMARIES, ATTENDANTS.
           STOP RUN.
