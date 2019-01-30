@@ -106,9 +106,13 @@
            FD SUMMARIES.
            01 SUMMARY.
                  02 SUMMARY-ID PIC 9(4).
+                 02 SUMMARY-PADDING1 PIC X(5).
                  02 SUMMARY-LAST-NAME PIC X(10).
+                 02 SUMMARY-PADDING2 PIC X(1).
                  02 SUMMARY-FIRST-NAME PIC X(20).
+                 02 SUMMARY-PADDING3 PIC X(1).
                  02 SUMMARY-DEPARTMENT PIC A(3).
+                 02 SUMMARY-PADDING4 PIC X(8).
                  02 SUMMARY-STATUS PIC A(10).
 
            WORKING-STORAGE SECTION.
@@ -126,9 +130,13 @@
              05 WS-MONTHLY-ATTENDANTS-STATUS-KEY-1 PIC X.
            01 WS-SUMMARY.
              02 WS-SUMMARY-ID PIC 9(4).
+             02 WS-SUMMARY-PADDING1 PIC X(5) VALUE "     ".
              02 WS-SUMMARY-LAST-NAME PIC X(10).
+             02 WS-SUMMARY-PADDING2 PIC X(1) VALUE " ".
              02 WS-SUMMARY-FIRST-NAME PIC X(20).
+             02 WS-SUMMARY-PADDING3 PIC X(1) VALUE " ".
              02 WS-SUMMARY-DEPARTMENT PIC A(3).
+             02 WS-SUMMARY-PADDING4 PIC X(8) VALUE "        ".
              02 WS-SUMMARY-STATUS PIC A(10).
       * EXTRA
              01 WS-ATTENDANT-ARRIVED PIC 9 VALUE 0.
@@ -155,6 +163,34 @@
              01 WS-LATE-PERIODS PIC 9(3).
              01 WS-OVERTIME-HOURS PIC 9(3).
              01 WS-SHOULD-READ-ATTENDANT PIC 9 VALUE 1.
+             01 WS-TITLE PIC X(24) VALUE
+               "Daily Attendance Summary".
+      * TODO       01 WS-DATE PIC X(18) VALUE "Date: September 29, 2018".
+             01 WS-COLUMNS.
+                02 F PIC X(13) VALUE "Staff-ID Name".
+                02 F PIC X(28) VALUE "                            ".
+                02 F PIC X(17) VALUE "Department Status".
+             01 WS-DASHES.
+                02 F PIC X(31) VALUE '-------------------------------'.
+                02 F PIC X(31) VALUE '-------------------------------'.
+             01 WS-PRESENCE.
+                02 F PIC X(21) VALUE "Number of Presences: ".
+                02 WS-PRESENCES-VALUE-DISPLAY PIC zzzz.
+             01 WS-ABSENCE.
+                02 F PIC X(20) VALUE "Number of Absences: ".
+                02 WS-ABSENCES-VALUE-DISPLAY PIC zzzz.
+             01 WS-LATE.
+                02 F PIC X(25) VALUE "Number of Late Arrivals: ".
+                02 WS-LATE-VALUE-DISPLAY PIC zzzz.
+             01 WS-SUSPICIOUS.
+                02 F PIC X(30) VALUE "Number of Suspicious Records: ".
+                02 WS-SUSPICIOUS-VALUE-DISPLAY PIC zzzz.
+             01 WS-PRESENCES-VALUE PIC 9(4).
+             01 WS-ABSENCES-VALUE PIC 9(4).
+             01 WS-LATE-VALUE PIC 9(4).
+             01 WS-SUSPICIOUS-VALUE PIC 9(4).
+      *TODO       01 WS-SUMMARY-DATE.
+      *TODO          02 WS-SUMMARY-DATE-MONTH PIC.
 
            PROCEDURE DIVISION.
            BEGIN.
@@ -168,8 +204,11 @@
                  ATTENDANTS-SORTED
              OPEN INPUT ATTENDANTS-SORTED.
 
-      *     WRITE-SUMMARY-HEADER.
-      * TODO MAKE PROCESS ATTENDANT PARAGRAPH AND CALL IT TWICE PER EMPLOYEE
+           WRITE-SUMMARY-HEADER.
+             WRITE SUMMARY FROM WS-TITLE
+      *TODO       WRITE SUMMARY FROM WS-DATE
+             WRITE SUMMARY FROM WS-COLUMNS
+             WRITE SUMMARY FROM WS-DASHES.
 
            PROCESS-EMPLOYEES.
       * EXPERIMENT
@@ -177,7 +216,7 @@
               READ EMPLOYEES
               IF WS-EMPLOYEES-STATUS-KEY-1 = "1"
                 DISPLAY "OUT OF PROCESS-EMPLOYEE"
-                GO TO FINISH
+                GO TO WRITE-SUMMARY-FOOTER
               END-IF
               PERFORM PROCESS-EMPLOYEE
               GO TO PROCESS-EMPLOYEES.
@@ -200,6 +239,17 @@
               PERFORM UPDATE-MONTHLY-ATTENDANCE
               DISPLAY "WROTE SUMMARY RECORD".
 
+           WRITE-SUMMARY-FOOTER.
+             MOVE WS-PRESENCES-VALUE TO WS-PRESENCES-VALUE-DISPLAY
+             MOVE WS-ABSENCES-VALUE TO WS-ABSENCES-VALUE-DISPLAY
+             MOVE WS-LATE-VALUE TO WS-LATE-VALUE-DISPLAY
+             MOVE WS-SUSPICIOUS-VALUE TO WS-SUSPICIOUS-VALUE-DISPLAY
+             WRITE SUMMARY FROM WS-DASHES
+             WRITE SUMMARY FROM WS-PRESENCE
+             WRITE SUMMARY FROM WS-ABSENCE
+             WRITE SUMMARY FROM WS-LATE
+             WRITE SUMMARY FROM WS-SUSPICIOUS.
+
       * HELPER FUNCTIONS
 
            UPDATE-MONTHLY-ATTENDANCE.
@@ -209,6 +259,8 @@
            PROCESS-ATTENDANT.
              IF ATTENDANT-SORTED-STATUS NOT = "ARRIVE"
                MOVE "SUSPICIOUS" TO WS-SUMMARY-STATUS
+               ADD 1 TO WS-SUSPICIOUS-VALUE
+               SUBTRACT 1 FROM WS-ABSENCES-VALUE
                MOVE 1 TO WS-SHOULD-READ-ATTENDANT
              END-IF
              IF ATTENDANT-SORTED-STATUS = "ARRIVE"
@@ -227,9 +279,13 @@
                       10 * 60) / 15
                    IF WS-LATE-PERIODS > 0
                      MOVE "LATE" TO WS-SUMMARY-STATUS
+                     ADD 1 TO WS-LATE-VALUE
+                     SUBTRACT 1 FROM WS-ABSENCES-VALUE
                    END-IF
                    IF WS-LATE-PERIODS = 0
                      MOVE "PRESENT" TO WS-SUMMARY-STATUS
+                     ADD 1 TO WS-PRESENCES-VALUE
+                     SUBTRACT 1 FROM WS-ABSENCES-VALUE
                      MOVE 1 TO WS-SHOULD-READ-ATTENDANT
                    END-IF
                    COMPUTE WS-OVERTIME-HOURS =
@@ -245,7 +301,8 @@
               MOVE EMPLOYEE-LAST-NAME TO WS-SUMMARY-LAST-NAME
               MOVE EMPLOYEE-FIRST-NAME TO WS-SUMMARY-FIRST-NAME
               MOVE EMPLOYEE-DEPARTMENT TO WS-SUMMARY-DEPARTMENT
-              MOVE "ABSENT" TO WS-SUMMARY-STATUS.
+              MOVE "ABSENT" TO WS-SUMMARY-STATUS
+              ADD 1 TO WS-ABSENCES-VALUE.
 
           FINISH.
               DISPLAY "Finished writing file".
