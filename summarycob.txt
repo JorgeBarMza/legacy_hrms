@@ -1,4 +1,5 @@
 Daily Attendance Summary
+September 29, 2018
 Staff-ID Name                            Department Status
 --------------------------------------------------------------
 1023     CHAN       TAI MAN              ITD        LATE

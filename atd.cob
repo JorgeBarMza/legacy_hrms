@@ -189,8 +189,18 @@
              01 WS-ABSENCES-VALUE PIC 9(4).
              01 WS-LATE-VALUE PIC 9(4).
              01 WS-SUSPICIOUS-VALUE PIC 9(4).
-      *TODO       01 WS-SUMMARY-DATE.
-      *TODO          02 WS-SUMMARY-DATE-MONTH PIC.
+             01 WS-SUMMARY-DATE.
+                02 WS-SUMMARY-DATE-YEAR PIC 9999.
+                02 DASH1 PIC X.
+                02 WS-SUMMARY-DATE-MONTH PIC 99.
+                02 DASH2 PIC X.
+                02 WS-SUMMARY-DATE-DAY PIC 99.
+             01 WS-SUMMARY-DATE-ENGLISH.
+                02 WS-SUMMARY-DATE-ENGLISH-MONTH PIC X(9).
+                02 SPACE1 PIC X VALUE " ".
+                02 WS-SUMMARY-DATE-ENGLISH-DAY PIC 9(2).
+                02 SPACE2 PIC XX VALUE ", ".
+                02 WS-SUMMARY-DATE-ENGLISH-YEAR PIC 9999.
 
            PROCEDURE DIVISION.
            BEGIN.
@@ -206,7 +216,8 @@
 
            WRITE-SUMMARY-HEADER.
              WRITE SUMMARY FROM WS-TITLE
-      *TODO       WRITE SUMMARY FROM WS-DATE
+             PERFORM PROCESS-HEADER-DATES
+             WRITE SUMMARY FROM WS-SUMMARY-DATE-ENGLISH
              WRITE SUMMARY FROM WS-COLUMNS
              WRITE SUMMARY FROM WS-DASHES.
 
@@ -215,7 +226,6 @@
       * END EXPERIMENT
               READ EMPLOYEES
               IF WS-EMPLOYEES-STATUS-KEY-1 = "1"
-                DISPLAY "OUT OF PROCESS-EMPLOYEE"
                 GO TO WRITE-SUMMARY-FOOTER
               END-IF
               PERFORM PROCESS-EMPLOYEE
@@ -236,8 +246,7 @@
                 END-IF
               END-IF
               WRITE SUMMARY FROM WS-SUMMARY
-              PERFORM UPDATE-MONTHLY-ATTENDANCE
-              DISPLAY "WROTE SUMMARY RECORD".
+              PERFORM UPDATE-MONTHLY-ATTENDANCE.
 
            WRITE-SUMMARY-FOOTER.
              MOVE WS-PRESENCES-VALUE TO WS-PRESENCES-VALUE-DISPLAY
@@ -264,7 +273,6 @@
                MOVE 1 TO WS-SHOULD-READ-ATTENDANT
              END-IF
              IF ATTENDANT-SORTED-STATUS = "ARRIVE"
-                DISPLAY "ARRIVED"
                  MOVE ATTENDANT-SORTED-DATETIME TO
                    WS-ATTENDANT-DATETIME-ARRIVE
                  IF WS-ATTENDANTS-SORTED-STATUS-KEY-1 NOT = "1"
@@ -303,6 +311,50 @@
               MOVE EMPLOYEE-DEPARTMENT TO WS-SUMMARY-DEPARTMENT
               MOVE "ABSENT" TO WS-SUMMARY-STATUS
               ADD 1 TO WS-ABSENCES-VALUE.
+
+           PROCESS-HEADER-DATES.
+              OPEN INPUT ATTENDANTS
+              READ ATTENDANTS
+              CLOSE ATTENDANTS
+              MOVE ATTENDANT TO WS-SUMMARY-DATE
+              MOVE WS-SUMMARY-DATE-DAY TO WS-SUMMARY-DATE-ENGLISH-DAY
+              MOVE WS-SUMMARY-DATE-YEAR TO WS-SUMMARY-DATE-ENGLISH-YEAR
+              IF WS-SUMMARY-DATE-MONTH EQUALS 01
+                 MOVE "January" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF
+              IF WS-SUMMARY-DATE-MONTH EQUALS 02
+                 MOVE "February" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF
+              IF WS-SUMMARY-DATE-MONTH EQUALS 03
+                 MOVE "March" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF
+              IF WS-SUMMARY-DATE-MONTH EQUALS 04
+                 MOVE "April" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF
+              IF WS-SUMMARY-DATE-MONTH EQUALS 05
+                 MOVE "May" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF
+              IF WS-SUMMARY-DATE-MONTH EQUALS 06
+                 MOVE "June" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF
+              IF WS-SUMMARY-DATE-MONTH EQUALS 07
+                 MOVE "July" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF
+              IF WS-SUMMARY-DATE-MONTH EQUALS 08
+                 MOVE "August" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF
+              IF WS-SUMMARY-DATE-MONTH EQUALS 09
+                 MOVE "September" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF
+              IF WS-SUMMARY-DATE-MONTH EQUALS 10
+                 MOVE "October" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF
+              IF WS-SUMMARY-DATE-MONTH EQUALS 11
+                 MOVE "November" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF
+              IF WS-SUMMARY-DATE-MONTH EQUALS 12
+                 MOVE "December" TO WS-SUMMARY-DATE-ENGLISH-MONTH
+              END-IF.
 
           FINISH.
               DISPLAY "Finished writing file".
