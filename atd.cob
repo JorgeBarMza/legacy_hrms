@@ -173,16 +173,16 @@
                 02 F PIC X(31) VALUE '-------------------------------'.
              01 WS-PRESENCE.
                 02 F PIC X(21) VALUE "Number of Presences: ".
-                02 WS-PRESENCES-VALUE-DISPLAY PIC zzzz.
+                02 WS-PRESENCES-VALUE-DISPLAY PIC zzz9.
              01 WS-ABSENCE.
                 02 F PIC X(20) VALUE "Number of Absences: ".
-                02 WS-ABSENCES-VALUE-DISPLAY PIC zzzz.
+                02 WS-ABSENCES-VALUE-DISPLAY PIC zzz9.
              01 WS-LATE-ARRIVAL.
                 02 F PIC X(25) VALUE "Number of Late Arrivals: ".
-                02 WS-LATE-VALUE-DISPLAY PIC zzzz.
+                02 WS-LATE-VALUE-DISPLAY PIC zzz9.
              01 WS-SUSPICIOUS.
                 02 F PIC X(30) VALUE "Number of Suspicious Records: ".
-                02 WS-SUSPICIOUS-VALUE-DISPLAY PIC zzzz.
+                02 WS-SUSPICIOUS-VALUE-DISPLAY PIC zzz9.
              01 WS-PRESENCES-VALUE PIC 9(4).
              01 WS-ABSENCES-VALUE PIC 9(4).
              01 WS-LATE-VALUE PIC 9(4).
@@ -291,11 +291,7 @@
 
            PROCESS-ATTENDANT.
              IF ATTENDANT-SORTED-STATUS NOT = "ARRIVE"
-               MOVE "SUSPICIOUS" TO WS-SUMMARY-STATUS
-               ADD 1 TO WS-SUSPICIOUS-VALUE
-               SUBTRACT 1 FROM WS-ABSENCES-VALUE
-               MOVE 0 TO WS-ABSENT
-               MOVE 1 TO WS-SHOULD-READ-ATTENDANT
+               PERFORM SET-SUSPICIOUS-STATUS
              END-IF
              IF ATTENDANT-SORTED-STATUS = "ARRIVE"
                  MOVE ATTENDANT-SORTED-DATETIME TO
@@ -327,6 +323,9 @@
                    COMPUTE WS-OVERTIME =
                      WS-ATTENDANT-DATETIME-LEAVE-HOUR - 17
                    ADD WS-OVERTIME TO WS-OVERTIME-HOURS
+                 END-IF
+                 IF EMPLOYEE-ID NOT EQUALS ATTENDANT-SORTED-ID
+                   PERFORM SET-SUSPICIOUS-STATUS
                  END-IF
                END-IF.
 
@@ -397,6 +396,13 @@
                 MOVE 0 TO WS-FIRST-DAY-OF-MONTH
               END-IF
               WRITE MONTHLY-ATTENDANT-OUT FROM WS-MONTHLY-DATE.
+
+          SET-SUSPICIOUS-STATUS.
+            MOVE "SUSPICIOUS" TO WS-SUMMARY-STATUS
+            ADD 1 TO WS-SUSPICIOUS-VALUE
+            SUBTRACT 1 FROM WS-ABSENCES-VALUE
+            MOVE 0 TO WS-ABSENT
+            MOVE 1 TO WS-SHOULD-READ-ATTENDANT.
 
           FINISH.
               DISPLAY "Finished writing file".
