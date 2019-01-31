@@ -1,3 +1,19 @@
+      * CSCI3180 Principles of Programming Languages
+      *
+      * --- Declaration ---
+      *
+      * I declare that the assignment here submitted is original except
+      * for source material explicitly acknowledged. I also
+      * acknowledge that I am aware of University policy and
+      * regulations on honesty in academic work, and of the
+      * disciplinary guidelines and procedures applicable to breaches
+      * of such policy and regulations, as contained in the website
+      * http://www.cuhk.edu.hk/policy/academichonesty/
+      *
+      * Assignment 1
+      * Name : Jorge Alberto Barrios Mendoza
+      * Student ID : 1155128883
+      * Email Addr : 1155128883@link.cuhk.edu.hk
            IDENTIFICATION DIVISION.
            PROGRAM-ID. FILES.
 
@@ -23,6 +39,7 @@
 
                 SELECT ATTENDANTS ASSIGN TO
                       'attendance.txt'
+                       FILE STATUS IS ATTENDANT-FILE-STAT
                        ORGANIZATION IS LINE SEQUENTIAL
                        ACCESS MODE IS SEQUENTIAL.
 
@@ -78,6 +95,7 @@
                  88 EOF-ATTENDANT VALUE HIGH-VALUES.
                  02 ATTENDANT-ID PIC 9(4).
                  02 ATTENDANT-STATUS PIC A(6).
+                 02 ATTENDANT-FILE-STAT PIC XX.
       *           YYY-MM-DD-HH:NN
                  02 ATTENDANT-DATETIME.
                     03 ATTENDANT-YEAR PIC 9(4).
@@ -89,6 +107,7 @@
                     03 ATTENDANT-HOUR PIC 9(2).
                     03 ATTENDANT-COLON PIC X.
                     03 ATTENDANT-MINUTE PIC 9(2).
+
 
            SD ATTENDANTS-WORK.
            01 ATTENDANT-WORK.
@@ -205,13 +224,16 @@
                 02 DASH2 PIC X.
                 02 WS-SUMMARY-DATE-DAY PIC 99.
              01 WS-SUMMARY-DATE-ENGLISH.
-                02 F PIC X(6) VALUE "Date: ".
+                02 WS-SUMMARY-DATE-ENGLISH-F PIC X(6) VALUE "Date: ".
                 02 WS-SUMMARY-DATE-ENGLISH-MONTH PIC X(9).
-                02 SPACE1 PIC X VALUE " ".
-                02 WS-SUMMARY-DATE-ENGLISH-DAY PIC 9(2).
-                02 SPACE2 PIC XX VALUE ", ".
+                02 WS-SUMMARY-DATE-ENGLISH-SPACE1 PIC X VALUE " ".
+                02 WS-SUMMARY-DATE-ENGLISH-DAY PIC z9.
+                02 WS-SUMMARY-DATE-ENGLISH-SPACE2 PIC XX VALUE ", ".
                 02 WS-SUMMARY-DATE-ENGLISH-YEAR PIC 9999.
-                02 CR VALUE X"0D".
+                02 WS-SUMMARY-DATE-ENGLISH-CR PIC X VALUE X"0D".
+             01 WS-SUMMARY-DATE-ENGLISH-CONCAT.
+                02 WS-SUMMARY-DATE-ENGLISH-CONCAT-F PIC X(18).
+                02 WS-SUMMARY-DATE-ENGLISH-CONCAT-CR PIC X VALUE X"0D".
              01 WS-ABSENT PIC 999.
              01 WS-LATE PIC 999.
              01 WS-OVERTIME PIC 999.
@@ -229,6 +251,7 @@
              OPEN INPUT EMPLOYEES
              OPEN OUTPUT MONTHLY-ATTENDANTS-OUT
              OPEN OUTPUT SUMMARIES
+      * Sort to process sequentially with employees
              SORT ATTENDANTS-WORK ON ASCENDING KEY
                  ATTENDANT-SORTED-ID USING ATTENDANTS GIVING
                  ATTENDANTS-SORTED
@@ -237,13 +260,11 @@
            WRITE-SUMMARY-HEADER.
              WRITE SUMMARY FROM WS-TITLE
              PERFORM PROCESS-HEADER-DATES
-             WRITE SUMMARY FROM WS-SUMMARY-DATE-ENGLISH
+             WRITE SUMMARY FROM WS-SUMMARY-DATE-ENGLISH-CONCAT
              WRITE SUMMARY FROM WS-COLUMNS
              WRITE SUMMARY FROM WS-DASHES.
 
            PROCESS-EMPLOYEES.
-      * EXPERIMENT
-      * END EXPERIMENT
               READ EMPLOYEES
               IF WS-EMPLOYEES-STATUS-KEY-1 = "1"
                 GO TO WRITE-SUMMARY-FOOTER
@@ -262,6 +283,7 @@
                   PERFORM PROCESS-ATTENDANT
                 END-IF
                 IF EMPLOYEE-ID NOT EQUALS ATTENDANT-SORTED-ID
+      * THE NEXT EMPLOYEE WAS READ ALREADY
                   MOVE 0 TO WS-SHOULD-READ-ATTENDANT
                 END-IF
               END-IF
@@ -315,6 +337,7 @@
                  IF EMPLOYEE-ID EQUALS ATTENDANT-SORTED-ID
                    MOVE ATTENDANT-SORTED-DATETIME TO
                      WS-ATTENDANT-DATETIME-LEAVE
+      * CONVERT TO MINUTES AND CALCULATE DIFFERENCE
                    COMPUTE WS-LATE-PERIODS =
                      (WS-ATTENDANT-DATETIME-ARRIVE-HOUR * 60 +
                       WS-ATTENDANT-DATETIME-ARRIVE-MINUTE -
@@ -348,6 +371,7 @@
               MOVE EMPLOYEE-FIRST-NAME TO WS-SUMMARY-FIRST-NAME
               MOVE EMPLOYEE-DEPARTMENT TO WS-SUMMARY-DEPARTMENT
               MOVE "ABSENT" TO WS-SUMMARY-STATUS
+      * NEW EMPLOYEE NEEDS VARIABLE RESET
               ADD 1 TO WS-ABSENCES-VALUE
               MOVE 1 TO WS-ABSENT
               MOVE 0 TO WS-LATE
@@ -358,8 +382,13 @@
 
            PROCESS-HEADER-DATES.
               OPEN INPUT ATTENDANTS
+              IF ATTENDANT-FILE-STAT = "35"
+                DISPLAY "attendance.txt file missing"
+                GO TO FINISH
+              END-IF
               READ ATTENDANTS
               MOVE ATTENDANT TO WS-SUMMARY-DATE
+      * CONVERT NUMERIC DATE TO ENGHISH
               MOVE WS-SUMMARY-DATE-DAY TO WS-SUMMARY-DATE-ENGLISH-DAY
               MOVE WS-SUMMARY-DATE-YEAR TO WS-SUMMARY-DATE-ENGLISH-YEAR
               IF WS-SUMMARY-DATE-MONTH EQUALS 01
@@ -398,6 +427,17 @@
               IF WS-SUMMARY-DATE-MONTH EQUALS 12
                  MOVE "December" TO WS-SUMMARY-DATE-ENGLISH-MONTH
               END-IF
+      * TRIM BLANK SPACES IN ENGHISH DATE
+              STRING
+                WS-SUMMARY-DATE-ENGLISH-F DELIMITED BY SIZE
+                WS-SUMMARY-DATE-ENGLISH-MONTH DELIMITED BY SPACE
+                WS-SUMMARY-DATE-ENGLISH-SPACE1 DELIMITED BY SIZE
+                FUNCTION TRIM(WS-SUMMARY-DATE-ENGLISH-DAY)
+                  DELIMITED BY SIZE
+                WS-SUMMARY-DATE-ENGLISH-SPACE2 DELIMITED BY SIZE
+                WS-SUMMARY-DATE-ENGLISH-YEAR DELIMITED BY SIZE
+                WS-SUMMARY-DATE-ENGLISH-CONCAT-CR DELIMITED BY SIZE
+              INTO WS-SUMMARY-DATE-ENGLISH-CONCAT.
       * CHECK FIRST DAY OF MONTH
               READ MONTHLY-ATTENDANTS
               MOVE WS-SUMMARY-DATE-YEAR TO WS-MONTHLY-DATE-YEAR
@@ -418,7 +458,6 @@
             MOVE 1 TO WS-SHOULD-READ-ATTENDANT.
 
           FINISH.
-              DISPLAY "Finished writing file".
               CLOSE ATTENDANTS-SORTED, MONTHLY-ATTENDANTS, EMPLOYEES,
                     MONTHLY-ATTENDANTS-OUT, SUMMARIES, ATTENDANTS.
           STOP RUN.
