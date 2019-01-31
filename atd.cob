@@ -59,6 +59,7 @@
                  02 MONTHLY-ATTENDANT-OUT-ABSENT PIC 9(3).
                  02 MONTHLY-ATTENDANT-OUT-LATE PIC 9(3).
                  02 MONTHLY-ATTENDANT-OUT-OVERTIME PIC 9(3).
+                 02 CR PIC X VALUE X"0D".
 
            FD EMPLOYEES.
            01 EMPLOYEE.
@@ -114,6 +115,7 @@
                  02 SUMMARY-DEPARTMENT PIC A(3).
                  02 SUMMARY-PADDING4 PIC X(8).
                  02 SUMMARY-STATUS PIC A(10).
+                 02 CR PIC X VALUE X"0D".
 
            WORKING-STORAGE SECTION.
            01 WS-MONTHLY-ATTENDANT.
@@ -121,6 +123,7 @@
              02 WS-MONTHLY-ATTENDANT-ABSENT PIC 9(3).
              02 WS-MONTHLY-ATTENDANT-LATE PIC 9(3).
              02 WS-MONTHLY-ATTENDANT-OVERTIME PIC 9(3).
+             02 CR PIC X VALUE X"0D".
            01 WS-EMPLOYEES-FILE-STATUS.
              05 WS-EMPLOYEES-STATUS-KEY-1 PIC X.
            01 WS-ATTENDANTS-SORTED-FILE-STATUS.
@@ -137,6 +140,7 @@
              02 WS-SUMMARY-DEPARTMENT PIC A(3).
              02 WS-SUMMARY-PADDING4 PIC X(8) VALUE "        ".
              02 WS-SUMMARY-STATUS PIC A(10).
+             02 CR PIC X VALUE X"0D".
       * EXTRA
              01 WS-ATTENDANT-ARRIVED PIC 9 VALUE 0.
              01 WS-ATTENDANT-DATETIME-ARRIVE.
@@ -162,27 +166,34 @@
              01 WS-LATE-PERIODS PIC 9(3).
              01 WS-OVERTIME-HOURS PIC 9(3).
              01 WS-SHOULD-READ-ATTENDANT PIC 9 VALUE 1.
-             01 WS-TITLE PIC X(24) VALUE
-               "Daily Attendance Summary".
+             01 WS-TITLE.
+                02 F PIC X(24) VALUE "Daily Attendance Summary".
+                02 CR PIC X VALUE X"0D".
              01 WS-COLUMNS.
                 02 F PIC X(13) VALUE "Staff-ID Name".
                 02 F PIC X(28) VALUE "                            ".
                 02 F PIC X(17) VALUE "Department Status".
+                02 CR PIC X VALUE X"0D".
              01 WS-DASHES.
                 02 F PIC X(31) VALUE '-------------------------------'.
                 02 F PIC X(31) VALUE '-------------------------------'.
+                02 CR PIC X VALUE X"0D".
              01 WS-PRESENCE.
                 02 F PIC X(21) VALUE "Number of Presences: ".
                 02 WS-PRESENCES-VALUE-DISPLAY PIC zzz9.
+                02 CR PIC X VALUE X"0D".
              01 WS-ABSENCE.
                 02 F PIC X(20) VALUE "Number of Absences: ".
                 02 WS-ABSENCES-VALUE-DISPLAY PIC zzz9.
+                02 CR PIC X VALUE X"0D".
              01 WS-LATE-ARRIVAL.
                 02 F PIC X(25) VALUE "Number of Late Arrivals: ".
                 02 WS-LATE-VALUE-DISPLAY PIC zzz9.
+                02 CR PIC X VALUE X"0D".
              01 WS-SUSPICIOUS.
                 02 F PIC X(30) VALUE "Number of Suspicious Records: ".
                 02 WS-SUSPICIOUS-VALUE-DISPLAY PIC zzz9.
+                02 CR PIC X VALUE X"0D".
              01 WS-PRESENCES-VALUE PIC 9(4).
              01 WS-ABSENCES-VALUE PIC 9(4).
              01 WS-LATE-VALUE PIC 9(4).
@@ -200,6 +211,7 @@
                 02 WS-SUMMARY-DATE-ENGLISH-DAY PIC 9(2).
                 02 SPACE2 PIC XX VALUE ", ".
                 02 WS-SUMMARY-DATE-ENGLISH-YEAR PIC 9999.
+                02 CR VALUE X"0D".
              01 WS-ABSENT PIC 999.
              01 WS-LATE PIC 999.
              01 WS-OVERTIME PIC 999.
@@ -207,6 +219,7 @@
                 02 WS-MONTHLY-DATE-YEAR PIC 9999.
                 02 DASH PIC X VALUE "-".
                 02 WS-MONTHLY-DATE-MONTH PIC 99.
+                02 CR PIC X VALUE X"0D".
              01 WS-FIRST-DAY-OF-MONTH PIC 9.
 
            PROCEDURE DIVISION.
