@@ -31,8 +31,6 @@ c convert numeral date to english
       character date_n*10
 c date_n is formatted "yyy-mm-dd"
       character year*4, month*2, day*2, m_e*9
-      character (len = 9), dimension (1 : 12) :: months
-      integer m_i, day_i
       year = date_n(1:4)
       month = date_n(6:7)
       day = date_n(9:10)
