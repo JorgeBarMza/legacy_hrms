@@ -1,30 +1,21 @@
       program atd
-      integer u
+      integer ios
       character employees*13, attendance*14, monthlyattendance*22
-      character date_n*10, date_e*18
+      character date_n*10, date_e*18, attendant*100
       parameter (u=20)
 
-c get filenames as args
-      CALL getarg(1, employees)
-      CALL getarg(2, attendance)
-      CALL getarg(3, monthlyattendance)
+c ******** main **********************************
 
-c open files
-      open (10, FILE=employees)
-      open (11, FILE=attendance)
-      open (12, FILE=monthlyattendance)
-      open (20, FILE='summaryfor.txt')
-      open (21, FILE='monthly-attendancefor.txt')
-
-c date conversion
+      call read_args_and_open_files()
       read(11, '(a)') date_n
-c      write(*,*) date_n
-c      write(*,*) date_n
-
-c      write(*,*) date_e(date_n)
       call write_summary_header(date_e(date_n))
 
+      read(11, '(A)', IOSTAT=ios) attendant
+      write(*,*) attendant
+
       end
+
+c ******** helper functions **********************
 
 c convert numeral date to english
       character*18 function date_e(date_n)
@@ -63,5 +54,21 @@ c todo trim day
       write(20,*) "Date: ", date_e
       write(20,*) cols
       write(20,*) dashes
+      return
+      end
+
+      subroutine read_args_and_open_files ()
+      character employees*13, attendance*14, monthlyattendance*22
+c get filenames as args
+      CALL getarg(1, employees)
+      CALL getarg(2, attendance)
+      CALL getarg(3, monthlyattendance)
+
+c open files
+      open (10, FILE=employees)
+      open (11, FILE=attendance)
+      open (12, FILE=monthlyattendance)
+      open (20, FILE='summaryfor.txt')
+      open (21, FILE='monthly-attendancefor.txt')
       return
       end
