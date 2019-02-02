@@ -36,14 +36,19 @@ c date_n is formatted "yyy-mm-dd"
       year = date_n(1:4)
       month = date_n(6:7)
       day = date_n(9:10)
-      months (1:12) = (/ 'January  ', 'February ', 'March    ',
-     & 'April    ', 'May      ', 'June     ', 'July     ', 'August   ',
-     & 'September', 'October  ', 'November ', 'December '/)
-      read(month,'(I2)') m_i
-      m_e = months(m_i)
-      if(day(1:1) .EQ. '0') then
-        day = day(2:2)
-      end if
+      if(month.EQ.'01') m_e = 'January'
+      if(month.EQ.'02') m_e = 'Februay'
+      if(month.EQ.'03') m_e = 'March'
+      if(month.EQ.'04') m_e = 'April'
+      if(month.EQ.'05') m_e = 'May'
+      if(month.EQ.'06') m_e = 'June'
+      if(month.EQ.'07') m_e = 'July'
+      if(month.EQ.'08') m_e = 'August'
+      if(month.EQ.'09') m_e = 'September'
+      if(month.EQ.'10') m_e = 'October'
+      if(month.EQ.'11') m_e = 'November'
+      if(month.EQ.'12') m_e = 'December'
+      if(day(1:1) .EQ. '0') day = day(2:2)
 c todo trim day
       date_e = m_e // ' ' // day // ', ' // year
       return
