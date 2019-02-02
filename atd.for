@@ -3,15 +3,18 @@
       character atts(10000)*100, empl(10000)*100
       character m_empl(10000)*100
       character date_n*10, date_e*18, att*100
+      integer len_at, dummy, a
 
 c ******** main **********************************
 
+c preprocess
       call read_args_and_open_files()
       read(11, '(a)') date_n
       call write_summary_header(date_e(date_n))
-      call read_f(10, empl)
-      call read_f(11, atts)
-      call read_f(12, m_empl)
+      call read_f(10, empl, len_at)
+      call read_f(11, atts, dummy)
+      call read_f(12, m_empl, dummy)
+      call bubble(atts, len_at)
       end
 
 c ******** helper functions **********************
@@ -42,12 +45,15 @@ c todo trim day
       return
       end
 
-      subroutine read_f (u,arr)
+      subroutine read_f (u,arr, len)
       character arr(10000)*100
-      integer id, u
+      integer id, u, len
       id = 1
+      len = 1
  10   read(u, '(A)', IOSTAT=ios) arr(id)
       if(ios.LT.0) return
+      len = len+1
+      id = id+1
       go to 10
       end
 
@@ -79,4 +85,27 @@ c open files
       open (20, FILE='summaryfor.txt')
       open (21, FILE='monthly-attendancefor.txt')
       return
+      end
+
+      subroutine swap(arr,a,b)
+      character arr(10000)*100, temp*100
+      integer a,b
+      temp=arr(a)
+      arr(a)=arr(b)
+      arr(b)=temp
+      return
+      end
+
+      subroutine bubble(arr, n)
+      character arr(10000)*100, id_1, id_2
+      integer i,j,n, a
+      i = 0
+ 12   i = i+1
+      if(i.GT.n) go to 11
+        j = n+1
+ 13     j = j-1
+        if(j.LT.(i+1)) go to 12
+          if(arr(j-1).GT.arr(j)) call swap(arr,j-1,j)
+        go to 13
+ 11   return
       end
