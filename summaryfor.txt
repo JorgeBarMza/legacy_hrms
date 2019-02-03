@@ -1,5 +1,5 @@
 Daily Attendance Summary\r
-Date: April     1 , 2018\r
+Date: April     3 , 2018\r
 Staff-ID Name                            Department Status\r
 --------------------------------------------------------------\r
 1023     CHAN       TAI MAN              ITD        LATE      \r
