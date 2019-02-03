@@ -19,7 +19,7 @@
       character atts(10000)*100, empls(10000)*100
       character m_empls(10000)*100, date_m*7
       character date_n*10, date_e*18, att*100
-      integer len_at, len_em, len_me dummy, a
+      integer len_at, len_em, len_me dummy, a, first
       integer tot_p, tot_a, tot_l, tot_s
 
 c ******** main **********************************
@@ -27,7 +27,10 @@ c ******** main **********************************
 c preprocess
       call read_args_and_open_files()
       read(11, '(a)') date_n
+      first = 0
+      if(date_n(9:10).EQ."01") first = 1
       read(12, '(a)') date_m
+      if(first.EQ.1) call f_dat(date_m)
       write(21,'(a)') date_m
       call write_summary_header(date_e(date_n))
       call read_f(10, empls, len_em)
@@ -36,7 +39,7 @@ c preprocess
       call bubble(atts, len_at)
 c process employees
       call prcs_e(empls,len_em, atts, len_at, tot_p,
-     &tot_a, tot_l, tot_s, m_empls)
+     &tot_a, tot_l, tot_s, m_empls, first)
       call w_tots(tot_p, tot_a, tot_l, tot_s)
       end
 
@@ -80,14 +83,23 @@ c todo trim day
       go to 10
       end
 
+      subroutine f_dat(date_m)
+      character date_m*7
+      integer month
+      read(date_m(6:7),'(I2)') month
+      month = month + 1
+      write(date_m(6:7), '(I2.2)') month
+      return
+      end
+
       subroutine prcs_e(empls,len_em, atts, len_at, tot_p,
-     &tot_a, tot_l, tot_s, m_empls)
+     &tot_a, tot_l, tot_s, m_empls, first)
       character id*4, pad_1*5, lname*10, pad_2*1, fname*20
       character pad_3*1, dep*2, pad_4*8, stat*10, empl*100
       character smry*62, empls(10000)*100, atts(10000)*100
       character m_empls(10000)*100
       integer emp_i, att_i, len_em, len_at, tot_p, tot_a
-      integer tot_l, tot_s, abs, late_p, over_p
+      integer tot_l, tot_s, abs, late_p, over_p, first
       tot_p = 0
       tot_a = 0
       tot_l = 0
@@ -112,18 +124,19 @@ c todo trim day
       smry = id // pad_1 // lname // pad_2 // fname // pad_3 //
      &dep // pad_4 // stat
       write(20, '(A)') smry
-      call m_upd(m_empls, emp_i, abs, late_p, over_p)
+      call m_upd(m_empls, emp_i, abs, late_p, over_p, first)
       emp_i = emp_i + 1
       go to 14
       end
 
-      subroutine m_upd(m_empls, emp_i, abs, late_p, over_p)
-      integer abs, late_p, over_p
+      subroutine m_upd(m_empls, emp_i, abs, late_p, over_p, first)
+      integer abs, late_p, over_p, first
       integer ar, lr, or, emp_i
       character m_empls(10000)*100
       read(m_empls(emp_i)(5:7),'(I3)') ar
       read(m_empls(emp_i)(8:10),'(I3)') lr
       read(m_empls(emp_i)(11:13),'(I3)') or
+      if(first.EQ.1) call do_fir(ar, lar, or)
       abs = abs + ar
       late_p = late_p + lr
       over_p = over_p + or
@@ -131,6 +144,14 @@ c todo trim day
       write(m_empls(emp_i)(8:10),'(I3.3)') late_p
       write(m_empls(emp_i)(11:13),'(I3.3)') over_p
       write(21,'(a)') m_empls(emp_i)
+      return
+      end
+
+      subroutine do_fir(ar, lr, or)
+      integer ar, lr, or
+      ar = 0
+      lr = 0
+      or = 0
       return
       end
 
