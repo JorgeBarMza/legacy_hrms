@@ -31,7 +31,7 @@ c preprocess
       if(date_n(9:10).EQ."01") first = 1
       read(12, '(a)') date_m
       if(first.EQ.1) call f_dat(date_m)
-      write(21,'(a)') date_m
+      write(21,'(a)') date_m// '\r'
       call write_summary_header(date_e(date_n))
       call read_f(10, empls, len_em)
       call read_f(11, atts, len_at)
@@ -95,7 +95,7 @@ c todo trim day
       subroutine prcs_e(empls,len_em, atts, len_at, tot_p,
      &tot_a, tot_l, tot_s, m_empls, first)
       character id*4, pad_1*5, lname*10, pad_2*1, fname*20
-      character pad_3*1, dep*2, pad_4*8, stat*10, empl*100
+      character pad_3*1, dep*3, pad_4*8, stat*10, empl*100
       character smry*62, empls(10000)*100, atts(10000)*100
       character m_empls(10000)*100
       integer emp_i, att_i, len_em, len_at, tot_p, tot_a
@@ -123,7 +123,7 @@ c todo trim day
      &tot_a, tot_l, tot_s, abs, late_p, over_p)
       smry = id // pad_1 // lname // pad_2 // fname // pad_3 //
      &dep // pad_4 // stat
-      write(20, '(A)') smry
+      write(20, '(A)') smry // '\r'
       call m_upd(m_empls, emp_i, abs, late_p, over_p, first)
       emp_i = emp_i + 1
       go to 14
@@ -143,7 +143,7 @@ c todo trim day
       write(m_empls(emp_i)(5:7),'(I3.3)') abs
       write(m_empls(emp_i)(8:10),'(I3.3)') late_p
       write(m_empls(emp_i)(11:13),'(I3.3)') over_p
-      write(21,'(a)') m_empls(emp_i)
+      write(21,'(a)') m_empls(emp_i)(1:13) // '\r'
       return
       end
 
@@ -181,20 +181,20 @@ c next attendant
       att_i = att_i + 1
       if(late_p.GT.0) go to 22
       go to 23
-  20  stat = "Absent"
+  20  stat = "ABSENT"
       tot_a = tot_a + 1
       abs = 1
       return
-  21  stat = "Suspicious"
+  21  stat = "SUSPICIOUS"
       tot_s = tot_s + 1
       return
-  22  stat = "Late"
+  22  stat = "LATE"
       tot_l = tot_l + 1
       return
-  23  stat = "Present"
+  23  stat = "PRESENT"
       tot_p = tot_p + 1
       return
-  24  stat = "Suspicious"
+  24  stat = "SUSPICIOUS"
       tot_s = tot_s + 1
       att_i = att_i + 1
       return
@@ -203,28 +203,33 @@ c next attendant
       subroutine w_tots(tot_p, tot_a, tot_l, tot_s)
       integer tot_p, tot_a, tot_l, tot_s
       character tot_as*4, tot_ps*4, tot_ls*4, tot_ss*4
+      character dashes*62
       write(tot_ps,'(i4)') tot_p
       write(tot_as,'(i4)') tot_a
       write(tot_ls,'(i4)') tot_l
       write(tot_ss,'(i4)') tot_s
-      write(20,'(a)') 'Number of Presences: ' // tot_ps
-      write(20,'(a)') 'Number of Absences: ' // tot_as
-      write(20,'(a)') 'Number of Late Arrivals: ' // tot_ls
-      write(20,'(a)') 'Number of Suspicious Records: ' // tot_ss
+      dashes = '-------------------------------' //
+     &'-------------------------------'
+      write(20,'(a)') dashes //'\r'
+      write(20,'(a)') 'Number of Presences: ' // tot_ps// '\r'
+      write(20,'(a)') 'Number of Absences: ' // tot_as// '\r'
+      write(20,'(a)') 'Number of Late Arrivals: ' // tot_ls// '\r'
+      write(20,'(a)') 'Number of Suspicious Records: '
+     &// tot_ss// '\r'
       return
       end
 
       subroutine write_summary_header (date_e)
-      character date_e*18, cols*58, dashes*58
+      character date_e*18, cols*58, dashes*62
       cols = 'Staff-ID Name' //
      &'                            ' //
      &'Department Status'
       dashes = '-------------------------------' //
-     &'------------------------------'
-      write(20,'(a)') 'Daily Attendance Summary'
-      write(20,'(a)') "Date: " // date_e
-      write(20,'(a)') cols
-      write(20,'(a)') dashes
+     &'-------------------------------'
+      write(20,'(a)') 'Daily Attendance Summary'// '\r'
+      write(20,'(a)') "Date: " // date_e// '\r'
+      write(20,'(a)') cols// '\r'
+      write(20,'(a)') dashes// '\r'
       return
       end
 
