@@ -16,10 +16,10 @@
 * Email Addr : 1155128883@link.cuhk.edu.hk
       program atd
       character employees*13, attendance*14, monthlyattendance*22
-      character atts(10000)*100, empls(10000)*100
-      character m_empls(10000)*100
+      character atts(10000)*100, empl(10000)*100
+      character m_empl(10000)*100
       character date_n*10, date_e*18, att*100
-      integer len_at, len_em, len_me dummy, a
+      integer len_at, dummy, a
 
 c ******** main **********************************
 
@@ -27,13 +27,10 @@ c preprocess
       call read_args_and_open_files()
       read(11, '(a)') date_n
       call write_summary_header(date_e(date_n))
-      call read_f(10, empls, len_em)
-      call read_f(11, atts, len_at)
-      call read_f(12, m_empls, len_me)
+      call read_f(10, empl, len_at)
+      call read_f(11, atts, dummy)
+      call read_f(12, m_empl, dummy)
       call bubble(atts, len_at)
-c process employees
-      call prcs_e(empls,len_em)
-
       end
 
 c ******** helper functions **********************
@@ -68,39 +65,13 @@ c todo trim day
       character arr(10000)*100
       integer id, u, len
       id = 1
-      len = 0
+      len = 1
  10   read(u, '(A)', IOSTAT=ios) arr(id)
       if(ios.LT.0) return
       len = len+1
       id = id+1
       go to 10
       end
-
-      subroutine prcs_e(empls,len_em)
-      character id*4, pad_1*5, lname*10, pad_2*1, fname*20
-      character pad_3*1, dep*2, pad_4*8, status*10, empl*100
-      character smry*62, empls(10000)*100
-      integer i, len_em
-      i = 1
- 14   empl = empls(i)
-      if(i.GT.len_em) return
-      id = empl(1:4)
-      pad_1 = "     "
-      lname = empl(5:14)
-      pad_2 = " "
-      fname = empl(15:34)
-      pad_3 = " "
-      dep = empl(56:58)
-      pad_4 = "        "
-      status = "status"
-      smry = id // pad_1 // lname // pad_2 // fname // pad_3 //
-     & dep // pad_4 // status
-      write(20, '(A)') smry
-c      write(*, '(A)') smry
-      i=i+1
-      go to 14
-      end
-
 
       subroutine write_summary_header (date_e)
       character date_e*18, cols*58, dashes*58
@@ -109,10 +80,10 @@ c      write(*, '(A)') smry
      &'Department Status'
       dashes = '-------------------------------' //
      &'------------------------------'
-      write(20,'(a)') 'Daily Attendance Summary'
-      write(20,'(a)') "Date: " // date_e
-      write(20,'(a)') cols
-      write(20,'(a)') dashes
+      write(20,*) "Daily Attendance Summary"
+      write(20,*) "Date: ", date_e
+      write(20,*) cols
+      write(20,*) dashes
       return
       end
 
@@ -122,6 +93,7 @@ c get filenames as args
       CALL getarg(1, employees)
       CALL getarg(2, attendance)
       CALL getarg(3, monthlyattendance)
+
 c open files
       open (10, FILE=employees)
       open (11, FILE=attendance)
@@ -141,8 +113,8 @@ c open files
       end
 
       subroutine bubble(arr, n)
-      character arr(10000)*100
-      integer i,j,n
+      character arr(10000)*100, id_1, id_2
+      integer i,j,n, a
       i = 0
  12   i = i+1
       if(i.GT.n) go to 11
