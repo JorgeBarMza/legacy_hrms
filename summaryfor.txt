@@ -2,7 +2,7 @@ Daily Attendance Summary
 Date: September 9 , 2018
 Staff-ID Name                            Department Status
 ----------------------------------------------------------
-1023     CHAN       TAI MAN              IT        status     
-1024     WONG       SIU MING             IT        status     
-1025     A123456789 B1234567890123456789 IT        status     
-1026     PAN        PETER                HR        status     
+1023     CHAN       TAI MAN              IT        Present    
+1024     WONG       SIU MING             IT        Absent     
+1025     A123456789 B1234567890123456789 IT        Absent     
+1026     PAN        PETER                HR        Absent     

@@ -32,7 +32,7 @@ c preprocess
       call read_f(12, m_empls, len_me)
       call bubble(atts, len_at)
 c process employees
-      call prcs_e(empls,len_em)
+      call prcs_e(empls,len_em, atts, len_at)
 
       end
 
@@ -76,14 +76,15 @@ c todo trim day
       go to 10
       end
 
-      subroutine prcs_e(empls,len_em)
+      subroutine prcs_e(empls,len_em, atts, len_at)
       character id*4, pad_1*5, lname*10, pad_2*1, fname*20
-      character pad_3*1, dep*2, pad_4*8, status*10, empl*100
-      character smry*62, empls(10000)*100
-      integer i, len_em
-      i = 1
- 14   empl = empls(i)
-      if(i.GT.len_em) return
+      character pad_3*1, dep*2, pad_4*8, stat*10, empl*100
+      character smry*62, empls(10000)*100, atts(10000)*100
+      integer emp_i, att_i, len_em, len_at
+      emp_i = 1
+      att_i = 1
+ 14   empl = empls(emp_i)
+      if(emp_i.GT.len_em) return
       id = empl(1:4)
       pad_1 = "     "
       lname = empl(5:14)
@@ -92,13 +93,45 @@ c todo trim day
       pad_3 = " "
       dep = empl(56:58)
       pad_4 = "        "
-      status = "status"
+      call status(stat, empls, atts, emp_i, att_i)
       smry = id // pad_1 // lname // pad_2 // fname // pad_3 //
-     & dep // pad_4 // status
+     & dep // pad_4 // stat
       write(20, '(A)') smry
-c      write(*, '(A)') smry
-      i=i+1
+      emp_i = emp_i + 1
       go to 14
+      end
+
+      subroutine status (stat, empls, atts, emp_i, att_i)
+      character stat*10, empls(10000)*100, atts(10000)*100
+      character att_id*4, emp_id*4, att_st*6
+      integer emp_i, att_i, a_hour, a_min, l_hou, l_min
+      integer late_p, over_p
+      emp_id = empls(emp_i)(1:4)
+      att_id = atts(att_i)(1:4)
+      if(emp_id.NE.att_id) go to 20
+      att_st = atts(att_i)(5:10)
+      if(att_st.EQ."LEAVE ") go to 21
+c arrived
+      read(atts(att_i)(22:23),'(i2)') a_hour
+      read(atts(att_i)(25:26),'(i2)') a_min
+c next attendant
+      att_i = att_i + 1
+      att_id = atts(att_i)(1:4)
+      if(emp_id.NE.att_id) go to 21
+      read(atts(att_i)(22:23),'(i2)') l_hour
+      read(atts(att_i)(25:26),'(i2)') l_min
+      late_p = (a_hour*60 + a_min - 10*60) / 15
+      if(late_p.GT.1) go to 22
+      over_p = l_hour-17
+      go to 23
+  20  stat = "Absent"
+      return
+  21  stat = "Suspicious"
+      return
+  22  stat = "Late"
+      return
+  23  stat = "Present"
+      return
       end
 
 
