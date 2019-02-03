@@ -146,7 +146,6 @@ c Monthly update. Increases absence, late and overtime values.
       abs = abs + ar
       late_p = late_p + lr
       over_p = over_p + or
-      write(*,*)over_p
       if(over_p.GT.30) over_p = 30
       if(over_p.LT.0) over_p = 0
       write(m_empls(emp_i)(5:7),'(I3.3)') abs

@@ -64,10 +64,14 @@ c date_n is formatted "yyyy-mm-dd"
       if(month.EQ.'10') m_e = 'October'
       if(month.EQ.'11') m_e = 'November'
       if(month.EQ.'12') m_e = 'December'
+      if((month.LT.'01').OR.(month.GT.'13')) go to 30
       if(day(1:1) .EQ. '0') day = day(2:2)
 c todo trim day
       date_e = m_e // ' ' // day // ', ' // year
       return
+ 30   write(*,*) "Error, date format for" //
+     &"monthly attendance is incorrect"
+      date_e = "0000-00-00"
       end
 
       subroutine read_f (u,arr, len)
@@ -82,6 +86,7 @@ c todo trim day
       go to 10
       end
 
+c update month when it's the first day
       subroutine f_dat(date_m)
       character date_m*7
       integer month
@@ -91,6 +96,7 @@ c todo trim day
       return
       end
 
+c process employees. Updates summary and monthly attendance
       subroutine prcs_e(empls,len_em, atts, len_at, tot_p,
      &tot_a, tot_l, tot_s, m_empls, first)
       character id*4, pad_1*5, lname*10, pad_2*1, fname*20
@@ -128,6 +134,7 @@ c todo trim day
       go to 14
       end
 
+c Monthly update. Increases absence, late and overtime values.
       subroutine m_upd(m_empls, emp_i, abs, late_p, over_p, first)
       integer abs, late_p, over_p, first
       integer ar, lr, or, emp_i
@@ -139,6 +146,9 @@ c todo trim day
       abs = abs + ar
       late_p = late_p + lr
       over_p = over_p + or
+      write(*,*)over_p
+      if(over_p.GT.30) over_p = 30
+      if(over_p.LT.0) over_p = 0
       write(m_empls(emp_i)(5:7),'(I3.3)') abs
       write(m_empls(emp_i)(8:10),'(I3.3)') late_p
       write(m_empls(emp_i)(11:13),'(I3.3)') over_p
@@ -146,6 +156,7 @@ c todo trim day
       return
       end
 
+c reset absence, late and overtime values to 0 on first day
       subroutine do_fir(ar, lr, or)
       integer ar, lr, or
       ar = 0
@@ -154,6 +165,7 @@ c todo trim day
       return
       end
 
+c calculate and write the correct status for an attendant
       subroutine status (stat, empls, atts, emp_i, att_i, tot_p,
      &tot_a, tot_l, tot_s, abs, late_p, over_p)
       character stat*10, empls(10000)*100, atts(10000)*100
@@ -170,9 +182,11 @@ c arrived
       read(atts(att_i)(22:23),'(i2)') a_hour
       read(atts(att_i)(25:26),'(i2)') a_min
 c next attendant
-      att_i = att_i + 1
+  25  att_i = att_i + 1
+      att_st = atts(att_i)(5:10)
       att_id = atts(att_i)(1:4)
       if(emp_id.NE.att_id) go to 21
+      if(att_st.EQ."ARRIVE") go to 25
       read(atts(att_i)(22:23),'(i2)') l_hour
       read(atts(att_i)(25:26),'(i2)') l_min
       late_p = (a_hour*60 + a_min - 10*60) / 15
@@ -199,6 +213,8 @@ c next attendant
       return
       end
 
+c calculate total presence, absence, late and suspicious
+c for a month
       subroutine w_tots(tot_p, tot_a, tot_l, tot_s)
       integer tot_p, tot_a, tot_l, tot_s
       character tot_as*4, tot_ps*4, tot_ls*4, tot_ss*4
@@ -256,6 +272,7 @@ c open files
       return
       end
 
+c sorting records in an array
       subroutine bubble(arr, n)
       character arr(10000)*100
       integer i,j,n
