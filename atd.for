@@ -17,7 +17,7 @@
       program atd
       character employees*13, attendance*14, monthlyattendance*22
       character atts(10000)*100, empls(10000)*100
-      character m_empls(10000)*100
+      character m_empls(10000)*100, date_m*7
       character date_n*10, date_e*18, att*100
       integer len_at, len_em, len_me dummy, a
       integer tot_p, tot_a, tot_l, tot_s
@@ -27,6 +27,8 @@ c ******** main **********************************
 c preprocess
       call read_args_and_open_files()
       read(11, '(a)') date_n
+      read(12, '(a)') date_m
+      write(21,'(a)') date_m
       call write_summary_header(date_e(date_n))
       call read_f(10, empls, len_em)
       call read_f(11, atts, len_at)
@@ -34,10 +36,8 @@ c preprocess
       call bubble(atts, len_at)
 c process employees
       call prcs_e(empls,len_em, atts, len_at, tot_p,
-     &tot_a, tot_l, tot_s)
+     &tot_a, tot_l, tot_s, m_empls)
       call w_tots(tot_p, tot_a, tot_l, tot_s)
-
-
       end
 
 c ******** helper functions **********************
@@ -81,12 +81,13 @@ c todo trim day
       end
 
       subroutine prcs_e(empls,len_em, atts, len_at, tot_p,
-     &tot_a, tot_l, tot_s)
+     &tot_a, tot_l, tot_s, m_empls)
       character id*4, pad_1*5, lname*10, pad_2*1, fname*20
       character pad_3*1, dep*2, pad_4*8, stat*10, empl*100
       character smry*62, empls(10000)*100, atts(10000)*100
+      character m_empls(10000)*100
       integer emp_i, att_i, len_em, len_at, tot_p, tot_a
-      integer tot_l, tot_s
+      integer tot_l, tot_s, abs, late_p, over_p
       tot_p = 0
       tot_a = 0
       tot_l = 0
@@ -94,6 +95,9 @@ c todo trim day
       emp_i = 1
       att_i = 1
  14   empl = empls(emp_i)
+      abs = 0
+      late_p = 0
+      over_p = 0
       if(emp_i.GT.len_em) return
       id = empl(1:4)
       pad_1 = "     "
@@ -104,20 +108,39 @@ c todo trim day
       dep = empl(56:58)
       pad_4 = "        "
       call status(stat, empls, atts, emp_i, att_i, tot_p,
-     &tot_a, tot_l, tot_s)
+     &tot_a, tot_l, tot_s, abs, late_p, over_p)
       smry = id // pad_1 // lname // pad_2 // fname // pad_3 //
      &dep // pad_4 // stat
       write(20, '(A)') smry
+      call m_upd(m_empls, emp_i, abs, late_p, over_p)
       emp_i = emp_i + 1
       go to 14
       end
 
+      subroutine m_upd(m_empls, emp_i, abs, late_p, over_p)
+      integer abs, late_p, over_p
+      integer ar, lr, or, emp_i
+      character m_empls(10000)*100
+      read(m_empls(emp_i)(5:7),'(I3)') ar
+      read(m_empls(emp_i)(8:10),'(I3)') lr
+      read(m_empls(emp_i)(11:13),'(I3)') or
+      abs = abs + ar
+      late_p = late_p + lr
+      over_p = over_p + or
+      write(m_empls(emp_i)(5:7),'(I3.3)') abs
+      write(m_empls(emp_i)(8:10),'(I3.3)') late_p
+      write(m_empls(emp_i)(11:13),'(I3.3)') over_p
+      write(21,'(a)') m_empls(emp_i)
+      return
+      end
+
       subroutine status (stat, empls, atts, emp_i, att_i, tot_p,
-     &tot_a, tot_l, tot_s)
+     &tot_a, tot_l, tot_s, abs, late_p, over_p)
       character stat*10, empls(10000)*100, atts(10000)*100
       character att_id*4, emp_id*4, att_st*6
       integer emp_i, att_i, a_hour, a_min, l_hou, l_min
       integer late_p, over_p, tot_p, tot_a, tot_l, tot_s
+      integer abs
       emp_id = empls(emp_i)(1:4)
       att_id = atts(att_i)(1:4)
       if(emp_id.NE.att_id) go to 20
@@ -139,6 +162,7 @@ c next attendant
       go to 23
   20  stat = "Absent"
       tot_a = tot_a + 1
+      abs = 1
       return
   21  stat = "Suspicious"
       tot_s = tot_s + 1
