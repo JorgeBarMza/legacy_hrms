@@ -20,6 +20,7 @@
       character m_empls(10000)*100
       character date_n*10, date_e*18, att*100
       integer len_at, len_em, len_me dummy, a
+      integer tot_p, tot_a, tot_l, tot_s
 
 c ******** main **********************************
 
@@ -32,7 +33,10 @@ c preprocess
       call read_f(12, m_empls, len_me)
       call bubble(atts, len_at)
 c process employees
-      call prcs_e(empls,len_em, atts, len_at)
+      call prcs_e(empls,len_em, atts, len_at, tot_p,
+     &tot_a, tot_l, tot_s)
+      call w_tots(tot_p, tot_a, tot_l, tot_s)
+
 
       end
 
@@ -76,11 +80,17 @@ c todo trim day
       go to 10
       end
 
-      subroutine prcs_e(empls,len_em, atts, len_at)
+      subroutine prcs_e(empls,len_em, atts, len_at, tot_p,
+     &tot_a, tot_l, tot_s)
       character id*4, pad_1*5, lname*10, pad_2*1, fname*20
       character pad_3*1, dep*2, pad_4*8, stat*10, empl*100
       character smry*62, empls(10000)*100, atts(10000)*100
-      integer emp_i, att_i, len_em, len_at
+      integer emp_i, att_i, len_em, len_at, tot_p, tot_a
+      integer tot_l, tot_s
+      tot_p = 0
+      tot_a = 0
+      tot_l = 0
+      tot_s = 0
       emp_i = 1
       att_i = 1
  14   empl = empls(emp_i)
@@ -93,22 +103,23 @@ c todo trim day
       pad_3 = " "
       dep = empl(56:58)
       pad_4 = "        "
-      call status(stat, empls, atts, emp_i, att_i)
+      call status(stat, empls, atts, emp_i, att_i, tot_p,
+     &tot_a, tot_l, tot_s)
       smry = id // pad_1 // lname // pad_2 // fname // pad_3 //
-     & dep // pad_4 // stat
+     &dep // pad_4 // stat
       write(20, '(A)') smry
       emp_i = emp_i + 1
       go to 14
       end
 
-      subroutine status (stat, empls, atts, emp_i, att_i)
+      subroutine status (stat, empls, atts, emp_i, att_i, tot_p,
+     &tot_a, tot_l, tot_s)
       character stat*10, empls(10000)*100, atts(10000)*100
       character att_id*4, emp_id*4, att_st*6
       integer emp_i, att_i, a_hour, a_min, l_hou, l_min
-      integer late_p, over_p
+      integer late_p, over_p, tot_p, tot_a, tot_l, tot_s
       emp_id = empls(emp_i)(1:4)
       att_id = atts(att_i)(1:4)
-      write (*,*) att_i
       if(emp_id.NE.att_id) go to 20
       att_st = atts(att_i)(5:10)
       if(att_st.EQ."LEAVE ") go to 24
@@ -121,27 +132,42 @@ c next attendant
       if(emp_id.NE.att_id) go to 21
       read(atts(att_i)(22:23),'(i2)') l_hour
       read(atts(att_i)(25:26),'(i2)') l_min
-      write(*,*) "a_hour ", a_hour
-      write(*,*) "a_min", a_min
       late_p = (a_hour*60 + a_min - 10*60) / 15
       over_p = l_hour-17
       att_i = att_i + 1
-      write(*,*) "late " ,late_p
       if(late_p.GT.0) go to 22
       go to 23
   20  stat = "Absent"
+      tot_a = tot_a + 1
       return
   21  stat = "Suspicious"
+      tot_s = tot_s + 1
       return
   22  stat = "Late"
+      tot_l = tot_l + 1
       return
   23  stat = "Present"
+      tot_p = tot_p + 1
       return
   24  stat = "Suspicious"
+      tot_s = tot_s + 1
       att_i = att_i + 1
       return
       end
 
+      subroutine w_tots(tot_p, tot_a, tot_l, tot_s)
+      integer tot_p, tot_a, tot_l, tot_s
+      character tot_as*4, tot_ps*4, tot_ls*4, tot_ss*4
+      write(tot_ps,'(i4)') tot_p
+      write(tot_as,'(i4)') tot_a
+      write(tot_ls,'(i4)') tot_l
+      write(tot_ss,'(i4)') tot_s
+      write(20,'(a)') 'Number of Presences: ' // tot_ps
+      write(20,'(a)') 'Number of Absences: ' // tot_as
+      write(20,'(a)') 'Number of Late Arrivals: ' // tot_ls
+      write(20,'(a)') 'Number of Suspicious Records: ' // tot_ss
+      return
+      end
 
       subroutine write_summary_header (date_e)
       character date_e*18, cols*58, dashes*58
