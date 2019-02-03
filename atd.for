@@ -108,9 +108,10 @@ c todo trim day
       integer late_p, over_p
       emp_id = empls(emp_i)(1:4)
       att_id = atts(att_i)(1:4)
+      write (*,*) att_i
       if(emp_id.NE.att_id) go to 20
       att_st = atts(att_i)(5:10)
-      if(att_st.EQ."LEAVE ") go to 21
+      if(att_st.EQ."LEAVE ") go to 24
 c arrived
       read(atts(att_i)(22:23),'(i2)') a_hour
       read(atts(att_i)(25:26),'(i2)') a_min
@@ -120,9 +121,13 @@ c next attendant
       if(emp_id.NE.att_id) go to 21
       read(atts(att_i)(22:23),'(i2)') l_hour
       read(atts(att_i)(25:26),'(i2)') l_min
+      write(*,*) "a_hour ", a_hour
+      write(*,*) "a_min", a_min
       late_p = (a_hour*60 + a_min - 10*60) / 15
-      if(late_p.GT.1) go to 22
       over_p = l_hour-17
+      att_i = att_i + 1
+      write(*,*) "late " ,late_p
+      if(late_p.GT.0) go to 22
       go to 23
   20  stat = "Absent"
       return
@@ -131,6 +136,9 @@ c next attendant
   22  stat = "Late"
       return
   23  stat = "Present"
+      return
+  24  stat = "Suspicious"
+      att_i = att_i + 1
       return
       end
 
